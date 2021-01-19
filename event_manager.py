@@ -1,4 +1,6 @@
+import re
 from tinydb import TinyDB, Query
+from tkinter import messagebox
 from tkinter import ttk
 import tkinter as tk
 from tkinter import scrolledtext 
@@ -8,7 +10,7 @@ class EventManagerApp():
         self.master = master 
         self.master.geometry('300x250')
         self.paid = {}
-
+        self.db = TinyDB('db.json')
 
     def labels(self):
         """
@@ -59,18 +61,41 @@ class EventManagerApp():
         chooser.current(1)
         chooser.place(x=100, y=60)
 
-    
+
+    def confirmation_message(self):
+        response = messagebox.askquestion("askquestion", "Are you sure?")
+        self.tag = "purple"
+        if response == "yes":
+            self.write_to_db()
+            self.display_paid_output()
+
+
+    def write_to_db(self):
+        self.db.insert({'name':self.name,'number':self.number})
 
     def display_check_output(self):
         """
         Display requested information and price and RSVP
         """
 
+        entry_name = self.get_name()
+        entry_number = self.get_number()
+        self.name = ""
+        self.number = ""
+
+        if re.match("^((?:\+27|27)|0)(\d{2})-?(\d{3})-?(\d{4})$",entry_number) and entry_name != "":
+            self.name = entry_name.strip()
+            self.number = entry_number
+        elif entry_name == "":
+            text = "Incorrect name"
+            messagebox.showerror(title="Invalid Entry", message=text)
+        else:
+            text = "Incorrect number"
+            messagebox.showerror(title="Invalid Entry", message=text)
+
         self.check_window.configure(state=tk.NORMAL)
-        name = self.get_name()
-        number = self.get_number()
-        self.paid[name]=number
-        self.info = f'{name} {number}'
+        self.paid[self.name]=self.number
+        self.info = f'{self.name} {self.number}'
         self.check_window.insert(tk.INSERT,self.info)
         self.check_window.configure(state=tk.DISABLED)
 
@@ -109,7 +134,7 @@ class EventManagerApp():
         Button to confirm payment for diplayed price
         """
 
-        paid = tk.Button(self.master,bg='green',text='Paid', command=self.display_paid_output)
+        paid = tk.Button(self.master,bg='green',text='Paid', command=self.confirmation_message)#self.display_paid_output)
         paid.place(x=150,y = 100,width=125)
 
 
